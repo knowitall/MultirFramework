@@ -7,14 +7,11 @@ import java.util.Random;
 
 public class Train {
 
-	public static void train(String dir) throws IOException {
-		
-		Random random = new Random(1);
-		
+	public static void train(String dir, Random r) throws IOException {		
 		Model model = new Model();
 		model.read(dir + File.separatorChar + "model");
 		
-		AveragedPerceptron ct = new AveragedPerceptron(model, random);
+		AveragedPerceptron ct = new AveragedPerceptron(model, r);
 		
 		Dataset train = new MemoryDataset(dir + File.separatorChar + "train");
 
@@ -27,6 +24,13 @@ public class Train {
 
 		params.serialize(dir + File.separatorChar + "params");
 	}
+	
+	public static void train(String dir) throws IOException {
+		
+		train(dir, new Random(1));
+
+	}
+	
 	
 	
 	public static void main(String [] args) throws IOException{
