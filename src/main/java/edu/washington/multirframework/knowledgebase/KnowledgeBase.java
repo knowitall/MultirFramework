@@ -111,20 +111,25 @@ public class KnowledgeBase {
 		String entityLine;
 		while((entityLine = entityReader.readLine())!=null){
 			String[] vals = entityLine.split("\t");
-			String entityId = vals[0];
-			String entityName = vals[1];
-			
-			if(relevantEntities.contains(entityId)){
+			if(vals.length ==2){
+				String entityId = vals[0];
+				String entityName = vals[1];
 				
-				if(entityMap.containsKey(entityName)){
-					entityMap.get(entityName).add(entityId);
-				}
-				else{
-					List<String> entityIds = new ArrayList<String>();
-					entityIds.add(entityId);
+				if(relevantEntities.contains(entityId)){
 					
-					entityMap.put(entityName, entityIds);
+					if(entityMap.containsKey(entityName)){
+						entityMap.get(entityName).add(entityId);
+					}
+					else{
+						List<String> entityIds = new ArrayList<String>();
+						entityIds.add(entityId);
+						
+						entityMap.put(entityName, entityIds);
+					}
 				}
+			}
+			else{
+				System.err.println("Line " +lineNumber + " was not formatted correctly:\n"+entityLine);
 			}
 			
 			
