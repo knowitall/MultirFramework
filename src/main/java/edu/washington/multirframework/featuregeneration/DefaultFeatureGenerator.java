@@ -136,7 +136,9 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 	
 	
 	/** 
-	 * Untouched RelationECML getFeatures algorithm...
+	 * RelationECML getFeatures algorithm
+         * @author Raphael Hoffmann
+         * @modified Xiao Ling
 	 * @param tokens
 	 * @param postags
 	 * @param depParents
@@ -151,9 +153,9 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 			String[] postags,
 			int[] depParents, String[] depTypes,
 			int[] arg1Pos, int[] arg2Pos, String arg1ner, String arg2ner) {
-
+ 
 		List<String> features = new ArrayList<String>();
-
+ 
 		// it's easier to deal with first, second
 		int[] first = arg1Pos, second = arg2Pos;
 		String firstNer = arg1ner, secondNer = arg2ner;
@@ -189,16 +191,16 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 			if (tokIndex < 0) prefixTokens[i] = "B_" + tokIndex;
 			else prefixTokens[i] = tokens[tokIndex];
 		}
-
+ 
 		for (int i=0; i < 2; i++) {
 			int tokIndex = second[1] + i;
 			if (tokIndex >= tokens.length) suffixTokens[i] = "B_" + (tokIndex - tokens.length + 1);
 			else suffixTokens[i] = tokens[tokIndex];
 		}
-
+ 
 		String[] prefixes = new String[3];
 		String[] suffixes = new String[3];
-
+ 
 		prefixes[0] = suffixes[0] = "";
 		prefixes[1] = prefixTokens[0];
 		prefixes[2] = prefixTokens[1] + " " + prefixTokens[0];
@@ -211,6 +213,12 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 		features.add(inv + "|" + firstNer + "|" + mto + "|" + secondNer);
 		features.add(inv + "|" + prefixes[1] + "|" + firstNer + "|" + mto + "|" + secondNer + "|" + suffixes[1]);
 		features.add(inv + "|" + prefixes[2] + "|" + firstNer + "|" + mto + "|" + secondNer + "|" + suffixes[2]);
+		
+		
+		
+		
+		
+ 
 		
 		// dependency features
 		if (depParents == null || depParents.length < tokens.length) return features;
@@ -238,7 +246,6 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 			  }
 			  loopIterationCount++;
 		}
-
 		
 		
 		// find path of dependencies from first to second
@@ -271,17 +278,24 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 					break outer;
 				}
 			}
-		
 		if (lca < 0) return features; // no dependency path (shouldn't happen)
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		String[] dirs = new String[lcaUp + lcaDown];
 		String[] strs = new String[lcaUp + lcaDown];
 		String[] rels = new String[lcaUp + lcaDown];
-
+ 
 		StringBuilder middleDirs = new StringBuilder();
 		StringBuilder middleRels = new StringBuilder();
 		StringBuilder middleStrs = new StringBuilder();
-
+ 
 		if (lcaUp + lcaDown < 12) {
 			
 			for (int i=0; i < lcaUp; i++) {
@@ -294,7 +308,7 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 			//for (int j=lcaDown-1; j >= 0; j--) {
 				dirs[lcaUp + j] = "<-";
 				strs[lcaUp + j] = (lcaUp + j > 0)? tokens[path2[lcaDown-j]] : ""; // word taken from above
-				rels[lcaUp + j] = depTypes[path2[lcaDown-j]];
+				rels[lcaUp + j] = depTypes[path2[lcaDown-j-1]];
 				//System.out.println("[" + depTypes[path2[j]] + "]<-");
 			}
 			
@@ -303,6 +317,7 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 				middleRels.append("[" + rels[i] + "]" + dirs[i]);
 				middleStrs.append(strs[i] + "[" + rels[i] + "]" + dirs[i]);
 			}
+			
 		}
 		else {
 				middleDirs.append("*LONG-PATH*");
@@ -314,7 +329,16 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 		String basicDep = arg1ner + "|" + middleRels.toString() + "|" + arg2ner;
 		String basicStr = arg1ner + "|" + middleStrs.toString() + "|" + arg2ner;
 		
-
+ 
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		// new left and right windows: all elements pointing to first arg, but not on path
 		//List<Integer> lws = new ArrayList<Integer>();
 		//List<Integer> rws = new ArrayList<Integer>();
@@ -329,15 +353,15 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 		// pointing out of argument
 		for (int i=0; i < tokens.length; i++) {
 			// make sure itself is not either argument
-			//if (i >= first[0] && i < first[1]) continue;
-			//if (i >= second[0] && i < second[1]) continue;
+		        //if (i >= first[0] && i < first[1]) continue;
+		        //if (i >= second[0] && i < second[1]) continue;
 			if (i == head1) continue;
 			if (i == head2) continue;
 			
 			// make sure i is not on path
 			boolean onPath = false;
-			for (int j=0; j < lcaUp; j++) if (path1[j] == i) onPath = true;
-			for (int j=0; j < lcaDown; j++) if (path2[j] == i) onPath = true;
+			for (int j=0; j < lcaUp+1; j++) if (path1[j] == i) onPath = true;
+			for (int j=0; j < lcaDown+1; j++) if (path2[j] == i) onPath = true;
 			if (onPath) continue;
 			// make sure i points to first or second arg
 			//if (depParents[i] >= first[0] && depParents[i] < first[1]) lws.add(i);
@@ -350,44 +374,45 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 			}
 			if (depParents[i] == head2) {
 				//rws.add(i);			
-				arg2dirs.add("->");				
-				arg2deps.add("[" + depTypes[i] + "]->");
-				arg2strs.add("[" + depTypes[i] + "]->" + tokens[i]);
+				arg2dirs.add("<-");				
+				arg2deps.add("[" + depTypes[i] + "]<-");
+				arg2strs.add("[" + depTypes[i] + "]<-" + tokens[i]);
 			}
 		}
 		
 		
 		// case 1: pointing into the argument pair structure (always attach to lhs):
 		// pointing from arguments
-		if (lcaUp == 0 && depParents[head1] != -1 || depParents[head1] == head2) {
+		if (lcaUp == 0 && depParents[head1] != -1 /*|| depParents[head1] == head2*/) {
 			arg1dirs.add("<-");				
 			arg1deps.add("[" + depTypes[head1] + "]<-");
-			arg1strs.add(tokens[head1] + "[" + depTypes[head1] + "]<-");
+			arg1strs.add(tokens[depParents[head1]] + "[" + depTypes[head1] + "]<-");
 			
 			if (depParents[depParents[head1]] != -1) {
 				arg1dirs.add("<-");
 				arg1deps.add("[" + depTypes[depParents[head1]] + "]<-");
-				arg1strs.add(tokens[depParents[head1]] + "[" + depTypes[depParents[head1]] + "]<-");
+				arg1strs.add(tokens[depParents[depParents[head1]]] + "[" + depTypes[depParents[head1]] + "]<-");
 			}
 		}
+ 
 		// if parent is not on path or if parent is 
-		if (lcaDown == 0 && depParents[head2] != -1 || depParents[head2] == head1) { // should this actually attach to rhs???
-			arg1dirs.add("<-");
-			arg1deps.add("[" + depTypes[head2] + "]<-");
-			arg1strs.add(tokens[head2] + "[" + depTypes[head2] + "]<-");
+		if (lcaDown == 0 && depParents[head2] != -1 /*|| depParents[head2] == head1*/) { // should this actually attach to rhs???
+			arg2dirs.add("->");
+			arg2deps.add("[" + depTypes[head2] + "]->");
+			arg2strs.add("[" + depTypes[head2] + "]->"+tokens[depParents[head2]]);
 			
 			if (depParents[depParents[head2]] != -1) {
-				arg1dirs.add("<-");
-				arg1deps.add("[" + depTypes[depParents[head2]] + "]<-");
-				arg1strs.add(tokens[depParents[head2]] + "[" + depTypes[depParents[head2]] + "]<-");
+				arg2dirs.add("->");
+				arg2deps.add("[" + depTypes[depParents[head2]] + "]->");
+				arg2strs.add("[" + depTypes[depParents[head2]] + "]->"+tokens[depParents[depParents[head2]]]);
 			}
 		}
-		
+ 
 		// case 2: pointing out of argument
 		
 		//features.add("dir:" + basicDir);		
 		//features.add("dep:" + basicDep);
-
+ 
 		
 		// left and right, including word
 		for (String w1 : arg1strs)
@@ -419,9 +444,9 @@ public class DefaultFeatureGenerator implements FeatureGenerator {
 			features.add("dep:" + basicDep + "|" + arg2deps.get(i));
 			features.add("dir:" + basicDir + "|" + arg2dirs.get(i));
 		}
-
+ 
 		features.add("str:" + basicStr);
-
+ 
 		return features;
 	}
 
